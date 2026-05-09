@@ -1,0 +1,6 @@
+[submodule "vendor/wvp-GB28181-pro"]
+	path = vendor/wvp-GB28181-pro
+	url = /home/p9/wvp-GB28181-pro
+[submodule "vendor/ZLMediaKit"]
+	path = vendor/ZLMediaKit
+	url = /home/p9/ZLMediaKit

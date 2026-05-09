@@ -1,0 +1,7 @@
+*.log
+*.tmp
+*.swp
+.env.local
+vendor/wvp-GB28181-pro-src
+vendor/ZLMediaKit-src
+.runtime/

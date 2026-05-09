@@ -1,0 +1,140 @@
+version: '3'
+services:
+  polaris-redis:
+    image: redis:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - media-net
+    volumes:
+      - ./redis/conf/redis.conf:/opt/polaris/redis/redis.conf:ro
+      - ./volumes/redis/data:/data
+    environment:
+      TZ: "Asia/Shanghai"
+    command: redis-server /opt/polaris/redis/redis.conf --appendonly yes
+
+  polaris-postgresql:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wvp_user -d wvp"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - media-net
+    environment:
+      POSTGRES_DB: wvp
+      POSTGRES_USER: wvp_user
+      POSTGRES_PASSWORD: wvp_password
+      TZ: Asia/Shanghai
+    volumes:
+      - ./volumes/postgresql/data:/var/lib/postgresql/data
+      - ${WVP_SOURCE_DIR}/数据库/2.7.4/初始化-postgresql-kingbase-2.7.4.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  polaris-media:
+    image: local/zlmediakit:ppc64le
+    restart: unless-stopped
+    networks:
+      - media-net
+    ports:
+      - "${MediaRtmp:-10935}:${MediaRtmp:-10935}/tcp"
+      - "${MediaRtmp:-10935}:${MediaRtmp:-10935}/udp"
+      - "${MediaRtsp:-5540}:${MediaRtsp:-5540}/tcp"
+      - "${MediaRtsp:-5540}:${MediaRtsp:-5540}/udp"
+      - "${MediaRtp:-10000}:${MediaRtp:-10000}/tcp"
+      - "${MediaRtp:-10000}:${MediaRtp:-10000}/udp"
+      - "${MediaRtc:-8000}:${MediaRtc:-8000}/tcp"
+      - "${MediaRtc:-8000}:${MediaRtc:-8000}/udp"
+    volumes:
+      - ./volumes/video:/opt/media/bin/www/record/
+      - ./logs/media:/opt/media/log/
+      - ./media/config.ini:/conf/config.ini:ro
+    command: [
+      "/opt/media/bin/MediaServer",
+      "-c", "/conf/config.ini",
+      "-l", "0"
+    ]
+
+  polaris-wvp:
+    build:
+      context: ${WVP_SOURCE_DIR}
+      dockerfile: ${BASELINE_ROOT}/dockerfiles/wvp.Dockerfile
+      network: host
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        no_proxy: ${no_proxy}
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    restart: unless-stopped
+    networks:
+      - media-net
+    ports:
+      - "18978:18978"
+      - "${SIP_Port:-8116}:${SIP_Port:-8116}/udp"
+      - "${SIP_Port:-8116}:${SIP_Port:-8116}/tcp"
+    depends_on:
+      - polaris-redis
+      - polaris-postgresql
+      - polaris-media
+    volumes:
+      - ./wvp/config:/opt/wvp/config
+      - ./wvp/wvp/:/opt/ylcx/wvp/
+      - ./logs/wvp:/opt/wvp/logs/
+    environment:
+      TZ: "Asia/Shanghai"
+      RUN_ENV: "docker"
+      Stream_IP: ${Stream_IP}
+      SDP_IP: ${SDP_IP}
+      ZLM_HOOK_HOST: polaris-wvp
+      ZLM_HOST: polaris-media
+      ZLM_SERCERT: su6TiedN2rVAmBbIDX0aa0QTiBJLBdcf
+      MediaHttp: ${WebHttp:-8080}
+      MediaRtmp: ${MediaRtmp:-10935}
+      MediaRtsp: ${MediaRtsp:-5540}
+      MediaRtp: ${MediaRtp:-10000}
+      REDIS_HOST: polaris-redis
+      REDIS_PORT: 6379
+      DATABASE_HOST: polaris-postgresql
+      DATABASE_PORT: 5432
+      DATABASE_NAME: wvp
+      DATABASE_USER: wvp_user
+      DATABASE_PASSWORD: wvp_password
+      SIP_ShowIP: ${SIP_ShowIP}
+      SIP_Port: ${SIP_Port:-8116}
+      SIP_Domain: ${SIP_Domain}
+      SIP_Id: ${SIP_Id}
+      SIP_Password: ${SIP_Password}
+      RecordSip: ${RecordSip}
+      RecordPushLive: ${RecordPushLive}
+
+  polaris-nginx:
+    build:
+      context: ${WVP_SOURCE_DIR}
+      dockerfile: ${BASELINE_ROOT}/dockerfiles/nginx.Dockerfile
+      network: host
+    restart: unless-stopped
+    ports:
+      - "${WebHttp:-8080}:8080"
+    depends_on:
+      - polaris-wvp
+    volumes:
+      - ./nginx/templates/:/etc/nginx/templates:ro
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      Stream_IP: ${Stream_IP}
+      WebHttp: ${WebHttp:-8080}
+    networks:
+      - media-net
+
+networks:
+  media-net:
+    driver: bridge
