@@ -6,20 +6,18 @@ RUNTIME_TEMPLATE_DIR="$BASE_DIR/runtime"
 RUNTIME_DIR="$BASE_DIR/.runtime"
 DRY_RUN="${BASELINE_DRY_RUN:-0}"
 
-resolve_repo_dir() {
-  local candidate
-  for candidate in "$@"; do
-    if [[ -e "$candidate" ]]; then
-      realpath "$candidate"
-      return 0
-    fi
-  done
-  echo "unable to resolve repo path from: $*" >&2
-  exit 1
+require_repo_dir() {
+  local dir="$1"
+  local name="$2"
+  if [[ ! -e "$dir" ]]; then
+    echo "$name source directory is missing: $dir" >&2
+    exit 1
+  fi
+  realpath "$dir"
 }
 
-WVP_DIR="$(resolve_repo_dir "$BASE_DIR/vendor/wvp-GB28181-pro-src" "$BASE_DIR/vendor/wvp-GB28181-pro" "/home/p9/wvp-GB28181-pro")"
-ZLM_DIR="$(resolve_repo_dir "$BASE_DIR/vendor/ZLMediaKit-src" "$BASE_DIR/vendor/ZLMediaKit" "/home/p9/ZLMediaKit")"
+WVP_DIR="$(require_repo_dir "$BASE_DIR/vendor/wvp-GB28181-pro" "WVP")"
+ZLM_DIR="$(require_repo_dir "$BASE_DIR/vendor/ZLMediaKit" "ZLMediaKit")"
 
 quote_args() {
   printf '%q ' "$@"
@@ -47,6 +45,31 @@ run_in_dir() {
   (cd "$dir" && "$@")
 }
 
+detect_host_ip() {
+  if python3 - 2>/dev/null <<'PY'
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+try:
+    s.connect(("1.1.1.1", 80))
+    print(s.getsockname()[0])
+finally:
+    s.close()
+PY
+  then
+    return 0
+  fi
+
+  local current_ip
+  current_ip="$(grep -E '^Stream_IP=' "$RUNTIME_TEMPLATE_DIR/.env" | tail -n 1 | cut -d= -f2-)"
+  if [[ -n "$current_ip" && "$current_ip" != "AUTO_HOST_IP" ]]; then
+    printf '%s\n' "$current_ip"
+    return 0
+  fi
+
+  printf '%s\n' "127.0.0.1"
+}
+
 sync_runtime_file() {
   local rel_path="$1"
   local src="$RUNTIME_TEMPLATE_DIR/$rel_path"
@@ -64,7 +87,17 @@ sync_runtime_tree() {
   run_cmd cp -a "$src/." "$dst/"
 }
 
+materialize_runtime_network_config() {
+  local target_ip="$1"
+  local env_file="$RUNTIME_DIR/.env"
+  local media_config="$RUNTIME_DIR/media/config.ini"
+  run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$target_ip/m; s/^SDP_IP=.*/SDP_IP=$target_ip/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$target_ip/m" "$env_file"
+  run_cmd perl -0pi -e "s/^externIP=.*/externIP=$target_ip/m" "$media_config"
+}
+
 ensure_runtime() {
+  local host_ip
+  host_ip="$(detect_host_ip)"
   run_cmd mkdir -p "$RUNTIME_DIR"
   sync_runtime_file ".env"
   sync_runtime_file "docker-compose.yml"
@@ -72,6 +105,7 @@ ensure_runtime() {
   sync_runtime_tree "nginx"
   sync_runtime_tree "redis"
   sync_runtime_tree "wvp"
+  materialize_runtime_network_config "$host_ip"
   run_cmd mkdir -p \
     "$RUNTIME_DIR/logs/media" \
     "$RUNTIME_DIR/logs/nginx" \
@@ -89,15 +123,4 @@ run_compose() {
     BASELINE_ROOT="$BASE_DIR" \
     RUNTIME_DIR="$RUNTIME_DIR" \
     docker compose "$@"
-}
-
-append_build_proxy_args() {
-  local -n target_ref=$1
-  local name value
-  for name in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY; do
-    value="${!name-}"
-    if [[ -n "$value" ]]; then
-      target_ref+=(--build-arg "$name=$value")
-    fi
-  done
 }

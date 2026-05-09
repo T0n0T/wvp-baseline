@@ -10,11 +10,11 @@ usage() {
 Usage: ./baseline.sh [--dry-run] <command> [args]
 
 Commands:
-  build-images               Build WVP and nginx images
-  configure-project [ip]     Update WVP/ZLM IP-related config
-  start-system               Start the compose stack
-  stop-system                Stop the compose stack
-  system-info                Show host, git, and compose status
+  configure [ip]             Update WVP/ZLM IP-related config
+  build                      Build required images
+  start                      Start the compose stack
+  stop                       Stop the compose stack
+  status                     Show project runtime status and key config
   help                       Show this help
 
 Options:
@@ -49,23 +49,23 @@ done
 
 COMMAND="${1:-help}"
 case "$COMMAND" in
-  build-images)
-    shift
-    run_command build-images.sh "$@"
-    ;;
-  configure-project)
+  configure)
     shift
     run_command configure-project.sh "$@"
     ;;
-  start-system)
+  build)
+    shift
+    run_command build-images.sh "$@"
+    ;;
+  start)
     shift
     run_command start-system.sh "$@"
     ;;
-  stop-system)
+  stop)
     shift
     run_command stop-system.sh "$@"
     ;;
-  system-info)
+  status)
     shift
     run_command system-info.sh "$@"
     ;;

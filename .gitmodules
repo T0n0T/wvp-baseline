@@ -1,6 +1,6 @@
 [submodule "vendor/wvp-GB28181-pro"]
 	path = vendor/wvp-GB28181-pro
-	url = /home/p9/wvp-GB28181-pro
+	url = https://github.com/648540858/wvp-GB28181-pro.git
 [submodule "vendor/ZLMediaKit"]
 	path = vendor/ZLMediaKit
-	url = /home/p9/ZLMediaKit
+	url = https://github.com/ZLMediaKit/ZLMediaKit.git

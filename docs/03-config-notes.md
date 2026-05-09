@@ -35,15 +35,11 @@ baseline 运行时基线目录：`runtime/`
 - 录像数据：`.runtime/volumes/video`
 - 服务日志：`.runtime/logs/`
 
-## 代理配置原则
+## 当前默认运行信息
 
-构建时使用如下环境变量：
-
-- `http_proxy`
-- `https_proxy`
-- `no_proxy`
-- `HTTP_PROXY`
-- `HTTPS_PROXY`
-- `NO_PROXY`
-
-代理仅在镜像构建阶段通过 `--build-arg` 传入，不应作为最终容器运行时环境变量固化。
+- WVP 默认后台账号：`admin`
+- WVP 默认后台密码：`admin`
+- WVP 默认 HTTP 端口：`18978`
+- Nginx 默认外部端口：`8080`
+- SIP 端口：`8160`
+- 媒体端口：`10001/10002/10003/8000`

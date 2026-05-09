@@ -1,4 +1,3 @@
-version: '3'
 services:
   polaris-redis:
     image: redis:latest
@@ -39,7 +38,11 @@ services:
       - ${WVP_SOURCE_DIR}/数据库/2.7.4/初始化-postgresql-kingbase-2.7.4.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   polaris-media:
-    image: local/zlmediakit:ppc64le
+    build:
+      context: ${ZLM_SOURCE_DIR}
+      dockerfile: ${BASELINE_ROOT}/dockerfiles/zlmediakit.Dockerfile
+      network: host
+    image: baseline/polaris-media:local
     restart: unless-stopped
     networks:
       - media-net
@@ -64,16 +67,10 @@ services:
 
   polaris-wvp:
     build:
-      context: ${WVP_SOURCE_DIR}
+      context: ${BASELINE_ROOT}
       dockerfile: ${BASELINE_ROOT}/dockerfiles/wvp.Dockerfile
       network: host
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
-        no_proxy: ${no_proxy}
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
-        NO_PROXY: ${NO_PROXY}
+    image: baseline/polaris-wvp:local
     restart: unless-stopped
     networks:
       - media-net
@@ -82,9 +79,12 @@ services:
       - "${SIP_Port:-8116}:${SIP_Port:-8116}/udp"
       - "${SIP_Port:-8116}:${SIP_Port:-8116}/tcp"
     depends_on:
-      - polaris-redis
-      - polaris-postgresql
-      - polaris-media
+      polaris-redis:
+        condition: service_healthy
+      polaris-postgresql:
+        condition: service_healthy
+      polaris-media:
+        condition: service_started
     volumes:
       - ./wvp/config:/opt/wvp/config
       - ./wvp/wvp/:/opt/ylcx/wvp/
@@ -101,6 +101,7 @@ services:
       MediaRtmp: ${MediaRtmp:-10935}
       MediaRtsp: ${MediaRtsp:-5540}
       MediaRtp: ${MediaRtp:-10000}
+      MediaRtc: ${MediaRtc:-8000}
       REDIS_HOST: polaris-redis
       REDIS_PORT: 6379
       DATABASE_HOST: polaris-postgresql
@@ -121,11 +122,13 @@ services:
       context: ${WVP_SOURCE_DIR}
       dockerfile: ${BASELINE_ROOT}/dockerfiles/nginx.Dockerfile
       network: host
+    image: baseline/polaris-nginx:local
     restart: unless-stopped
     ports:
       - "${WebHttp:-8080}:8080"
     depends_on:
-      - polaris-wvp
+      polaris-wvp:
+        condition: service_started
     volumes:
       - ./nginx/templates/:/etc/nginx/templates:ro
       - ./logs/nginx:/var/log/nginx

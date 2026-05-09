@@ -5,25 +5,15 @@ EXPOSE 8116/tcp
 EXPOSE 8116/udp
 EXPOSE 8080/tcp
 
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-ARG NO_PROXY
-
 RUN java -version && javac -version
 
-COPY . /build
+COPY vendor/wvp-GB28181-pro /build
+COPY .git/modules/vendor/wvp-GB28181-pro /tmp/wvp-git
 WORKDIR /build
-RUN env \
-    http_proxy="${http_proxy}" \
-    https_proxy="${https_proxy}" \
-    no_proxy="${no_proxy}" \
-    HTTP_PROXY="${HTTP_PROXY}" \
-    HTTPS_PROXY="${HTTPS_PROXY}" \
-    NO_PROXY="${NO_PROXY}" \
-    mvn -Dmaven.repo.local=/root/.m2/repository clean package -Dmaven.test.skip=true
+RUN rm -f /build/.git && mkdir -p /build/.git && cp -a /tmp/wvp-git/. /build/.git/ \
+    && perl -0pi -e 's#^\s*worktree = .*$#\tworktree = /build#m' /build/.git/config
+
+RUN mvn -Dmaven.repo.local=/root/.m2/repository clean package -Dmaven.test.skip=true
 WORKDIR /build/target
 RUN mv wvp-pro-*.jar wvp.jar
 
@@ -32,5 +22,5 @@ FROM eclipse-temurin:21-jre
 RUN mkdir -p /opt/wvp
 WORKDIR /opt/wvp
 COPY --from=builder /build/target /opt/wvp
-COPY ./docker/wvp/wvp /opt/wvp
+COPY vendor/wvp-GB28181-pro/docker/wvp/wvp /opt/wvp
 ENTRYPOINT ["java", "-Xms512m", "-Xmx1024m", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/opt/ylcx/", "-jar", "wvp.jar", "--spring.config.location=/opt/ylcx/wvp/application.yml"]
