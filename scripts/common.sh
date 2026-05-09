@@ -5,6 +5,8 @@ BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME_TEMPLATE_DIR="$BASE_DIR/runtime"
 RUNTIME_DIR="$BASE_DIR/.runtime"
 DRY_RUN="${BASELINE_DRY_RUN:-0}"
+ENV_SCRIPT="$BASE_DIR/scripts/env.sh"
+source "$ENV_SCRIPT"
 
 require_repo_dir() {
   local dir="$1"
@@ -60,10 +62,8 @@ PY
     return 0
   fi
 
-  local current_ip
-  current_ip="$(grep -E '^Stream_IP=' "$RUNTIME_TEMPLATE_DIR/.env" | tail -n 1 | cut -d= -f2-)"
-  if [[ -n "$current_ip" && "$current_ip" != "AUTO_HOST_IP" ]]; then
-    printf '%s\n' "$current_ip"
+  if [[ -n "$BASELINE_HOST_IP" && "$BASELINE_HOST_IP" != "AUTO_HOST_IP" ]]; then
+    printf '%s\n' "$BASELINE_HOST_IP"
     return 0
   fi
 
@@ -91,7 +91,7 @@ materialize_runtime_network_config() {
   local target_ip="$1"
   local env_file="$RUNTIME_DIR/.env"
   local media_config="$RUNTIME_DIR/media/config.ini"
-  run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$target_ip/m; s/^SDP_IP=.*/SDP_IP=$target_ip/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$target_ip/m" "$env_file"
+  run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$target_ip/m; s/^SDP_IP=.*/SDP_IP=$target_ip/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$target_ip/m; s/^WebHttp=.*/WebHttp=$BASELINE_WEB_HTTP/m; s/^WebHttps=.*/WebHttps=$BASELINE_WEB_HTTPS/m; s/^MediaRtmp=.*/MediaRtmp=$BASELINE_MEDIA_RTMP/m; s/^MediaRtsp=.*/MediaRtsp=$BASELINE_MEDIA_RTSP/m; s/^MediaRtp=.*/MediaRtp=$BASELINE_MEDIA_RTP/m; s/^MediaRtc=.*/MediaRtc=$BASELINE_MEDIA_RTC/m; s/^SIP_Port=.*/SIP_Port=$BASELINE_SIP_PORT/m; s/^SIP_Domain=.*/SIP_Domain=$BASELINE_SIP_DOMAIN/m; s/^SIP_Id=.*/SIP_Id=$BASELINE_SIP_ID/m; s/^SIP_Password=.*/SIP_Password=$BASELINE_SIP_PASSWORD/m; s/^RecordSip=.*/RecordSip=$BASELINE_RECORD_SIP/m; s/^RecordPushLive=.*/RecordPushLive=$BASELINE_RECORD_PUSH_LIVE/m" "$env_file"
   run_cmd perl -0pi -e "s/^externIP=.*/externIP=$target_ip/m" "$media_config"
 }
 
@@ -113,6 +113,17 @@ ensure_runtime() {
     "$RUNTIME_DIR/volumes/postgresql/data" \
     "$RUNTIME_DIR/volumes/redis/data" \
     "$RUNTIME_DIR/volumes/video/rtp"
+}
+
+append_build_proxy_args() {
+  local -n target_ref=$1
+  local name value
+  for name in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY; do
+    value="${!name-}"
+    if [[ -n "$value" ]]; then
+      target_ref+=(--build-arg "$name=$value")
+    fi
+  done
 }
 
 run_compose() {

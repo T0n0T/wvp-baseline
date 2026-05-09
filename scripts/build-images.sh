@@ -7,8 +7,11 @@ ensure_runtime
 
 build_service() {
   local service="$1"
+  local compose_args=(build)
+  append_build_proxy_args compose_args
+  compose_args+=("$service")
   echo "[build] building $service"
-  run_compose build "$service"
+  run_compose "${compose_args[@]}"
 }
 
 build_service polaris-media

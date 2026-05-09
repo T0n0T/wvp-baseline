@@ -23,14 +23,7 @@ RUN if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
       sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|g; s|http://security.ubuntu.com/ubuntu/|http://mirrors.tuna.tsinghua.edu.cn/ubuntu/|g; s|http://ports.ubuntu.com/ubuntu-ports/|http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/|g' /etc/apt/sources.list; \
     fi
 
-RUN env \
-      http_proxy="$http_proxy" \
-      https_proxy="$https_proxy" \
-      no_proxy="$no_proxy" \
-      HTTP_PROXY="$HTTP_PROXY" \
-      HTTPS_PROXY="$HTTPS_PROXY" \
-      NO_PROXY="$NO_PROXY" \
-      apt-get update && \
+RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" \
       apt-get install -y --no-install-recommends \
       build-essential \
@@ -55,14 +48,7 @@ COPY . /opt/media/ZLMediaKit
 WORKDIR /opt/media/ZLMediaKit
 
 WORKDIR /opt/media/ZLMediaKit/3rdpart
-RUN env \
-      http_proxy="$http_proxy" \
-      https_proxy="$https_proxy" \
-      no_proxy="$no_proxy" \
-      HTTP_PROXY="$HTTP_PROXY" \
-      HTTPS_PROXY="$HTTPS_PROXY" \
-      NO_PROXY="$NO_PROXY" \
-      wget https://github.com/cisco/libsrtp/archive/v2.3.0.tar.gz -O libsrtp-2.3.0.tar.gz && \
+RUN wget https://github.com/cisco/libsrtp/archive/v2.3.0.tar.gz -O libsrtp-2.3.0.tar.gz && \
     tar xfv libsrtp-2.3.0.tar.gz && \
     mv libsrtp-2.3.0 libsrtp && \
     cd libsrtp && CFLAGS="-fcommon" ./configure --enable-openssl && make -j "$(nproc)" && make install
@@ -112,5 +98,5 @@ WORKDIR /opt/media/bin/
 COPY --from=build /opt/media/ZLMediaKit/release/linux/${MODEL}/MediaServer /opt/media/ZLMediaKit/default.pem /opt/media/bin/
 COPY --from=build /opt/media/ZLMediaKit/release/linux/${MODEL}/config.ini /opt/media/conf/
 COPY --from=build /opt/media/ZLMediaKit/www/ /opt/media/bin/www/
-ENV PATH /opt/media/bin:$PATH
+ENV PATH=/opt/media/bin:$PATH
 CMD ["./MediaServer", "-s", "default.pem", "-c", "../conf/config.ini", "-l", "0"]

@@ -9,6 +9,7 @@
 - `runtime/`：可提交的运行时基线文件
 - `.runtime/`：命令执行时生成的运行时目录，包含 compose 工作目录、日志和持久化数据，不纳入提交
 - `scripts/`：构建、配置、启动、停止、状态收集脚本实现
+- `scripts/env.sh`：默认环境变量入口，包含代理、端口、SIP 和主机地址默认值
 - `docs/`：镜像构建与部署说明
 - `dockerfiles/`：本仓库维护的 Dockerfile 方案
 - `tests/`：baseline 脚本回归检查
@@ -32,6 +33,36 @@
 
 `--dry-run` 只输出将要执行的命令，不实际改配置，也不会真正执行 `docker compose`。
 
+## 配置入口
+
+优先修改 `scripts/env.sh`，这里集中管理默认值：
+
+- `BASELINE_HOST_IP`
+- `BASELINE_WEB_HTTP`
+- `BASELINE_WEB_HTTPS`
+- `BASELINE_MEDIA_RTMP`
+- `BASELINE_MEDIA_RTSP`
+- `BASELINE_MEDIA_RTP`
+- `BASELINE_MEDIA_RTC`
+- `BASELINE_SIP_PORT`
+- `BASELINE_SIP_DOMAIN`
+- `BASELINE_SIP_ID`
+- `BASELINE_SIP_PASSWORD`
+- `BASELINE_RECORD_SIP`
+- `BASELINE_RECORD_PUSH_LIVE`
+- `http_proxy`
+- `https_proxy`
+- `no_proxy`
+- `HTTP_PROXY`
+- `HTTPS_PROXY`
+- `NO_PROXY`
+
+默认情况下：
+
+- `BASELINE_HOST_IP=AUTO_HOST_IP`
+- 运行脚本时会自动解析执行机器的实际 IPv4，并回填到 `.runtime/.env` 与 `.runtime/media/config.ini`
+- 如果你执行 `./baseline.sh configure 192.168.x.x`，也会把这个 IP 同步写回 `runtime/.env`、`runtime/media/config.ini` 和 `scripts/env.sh`
+
 ## 当前运行方式
 
 本仓库当前以 Docker Compose 方式管理以下服务：
@@ -52,8 +83,25 @@
 ## 常用流程
 
 ```bash
-./baseline.sh configure 10.8.4.63
+# 1. 按需修改 scripts/env.sh
+# 2. 可选：显式指定当前机器对外地址
+./baseline.sh configure
+# 或者
+./baseline.sh configure 192.168.1.10
+
+# 3. 构建镜像
 ./baseline.sh build
+
+# 4. 启动系统
 ./baseline.sh start
+
+# 5. 查看状态与关键信息
 ./baseline.sh status
 ```
+
+## 构建代理
+
+代理只通过 `docker compose build --build-arg ...` 注入构建阶段：
+
+- 如果你在 `scripts/env.sh` 或当前 shell 里设置了 `http_proxy` / `https_proxy` 等变量，`./baseline.sh build` 会自动把它们追加为 `--build-arg`
+- Dockerfile 本身不再显式包一层 `env http_proxy=...` 调用
