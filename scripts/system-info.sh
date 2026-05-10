@@ -18,7 +18,7 @@ print_kv() {
 
 echo "[status] project"
 print_kv "baseline" "$BASE_DIR"
-print_kv "runtime template" "$RUNTIME_TEMPLATE_DIR"
+print_kv "skeletons" "$SKELETONS_DIR"
 print_kv "runtime dir" "$RUNTIME_DIR"
 print_kv "wvp source" "$WVP_DIR"
 print_kv "zlm source" "$ZLM_DIR"
@@ -42,18 +42,6 @@ printf '[status] host\n'
 run_cmd uname -a
 
 echo
-printf '[status] git status - baseline\n'
-run_in_dir "$BASE_DIR" git status --short || true
-
-echo
-printf '[status] git status - wvp\n'
-run_in_dir "$WVP_DIR" git status --short || true
-
-echo
-printf '[status] git status - zlm\n'
-run_in_dir "$ZLM_DIR" git status --short || true
-
-echo
 printf '[status] runtime dir\n'
 run_cmd ls -ld "$RUNTIME_DIR" || true
 
@@ -66,6 +54,3 @@ run_in_dir "$RUNTIME_DIR" env \
   RUNTIME_DIR="$RUNTIME_DIR" \
   docker compose ps || true
 
-echo
-printf '[status] docker images\n'
-run_cmd docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}'

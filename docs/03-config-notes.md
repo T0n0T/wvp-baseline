@@ -2,19 +2,20 @@
 
 ## WVP 关键配置
 
-baseline 运行时基线目录：`runtime/`
+baseline 提交态骨架目录：`skeletons/`
 
 重点文件：
 
-- `runtime/.env`
-- `runtime/docker-compose.yml`
-- `runtime/wvp/wvp/application-docker.yml`
-- `runtime/media/config.ini`
-- `runtime/nginx/templates/nginx.conf.template`
+- `skeletons/.env`
+- `skeletons/docker-compose.yml`
+- `skeletons/wvp/wvp/application-docker.yml`
+- `skeletons/media/config.ini`
+- `skeletons/nginx/templates/nginx.conf.template`
 
 脚本实际运行目录：`.runtime/`
 
 - 以上基线文件会在执行命令前同步到 `.runtime/`
+- `configure` 只修改现有 `.runtime/` 中的运行时配置
 - 不应手工把 `.runtime/` 作为长期配置保存位置
 
 ## 地址配置原则
@@ -24,7 +25,7 @@ baseline 运行时基线目录：`runtime/`
 - `Stream_IP`
 - `SDP_IP`
 - `SIP_ShowIP`
-- `runtime/media/config.ini` 中的 `rtc.externIP`
+- `.runtime/media/config.ini` 中的 `rtc.externIP`
 
 ## 持久化路径原则
 

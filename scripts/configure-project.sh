@@ -3,17 +3,14 @@ set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 TARGET_IP="${1:-$(detect_host_ip)}"
-TEMPLATE_ENV="$RUNTIME_TEMPLATE_DIR/.env"
-TEMPLATE_MEDIA_CONFIG="$RUNTIME_TEMPLATE_DIR/media/config.ini"
-ENV_SCRIPT="$BASE_DIR/scripts/env.sh"
+RUNTIME_ENV="$RUNTIME_DIR/.env"
+RUNTIME_MEDIA_CONFIG="$RUNTIME_DIR/media/config.ini"
 
 echo "[configure] target ip: $TARGET_IP"
-run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$TARGET_IP/m; s/^SDP_IP=.*/SDP_IP=$TARGET_IP/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$TARGET_IP/m" "$TEMPLATE_ENV"
-run_cmd perl -0pi -e "s/^externIP=.*/externIP=$TARGET_IP/m" "$TEMPLATE_MEDIA_CONFIG"
-run_cmd perl -0pi -e "s/^: \"\$\{BASELINE_HOST_IP:=.*\}\"$/: \"\$\{BASELINE_HOST_IP:=$TARGET_IP\}\"/m" "$ENV_SCRIPT"
-ensure_runtime
+require_runtime_dir
+run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$TARGET_IP/m; s/^SDP_IP=.*/SDP_IP=$TARGET_IP/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$TARGET_IP/m" "$RUNTIME_ENV"
+run_cmd perl -0pi -e "s/^externIP=.*/externIP=$TARGET_IP/m" "$RUNTIME_MEDIA_CONFIG"
 
-echo "[configure] updated template values"
-run_cmd grep -nE "^(Stream_IP|SDP_IP|SIP_ShowIP)=" "$TEMPLATE_ENV"
-run_cmd grep -n "^externIP=" "$TEMPLATE_MEDIA_CONFIG"
-run_cmd grep -n '^: "\$\{BASELINE_HOST_IP:=' "$ENV_SCRIPT"
+echo "[configure] updated runtime values"
+run_cmd grep -nE "^(Stream_IP|SDP_IP|SIP_ShowIP)=" "$RUNTIME_ENV"
+run_cmd grep -n "^externIP=" "$RUNTIME_MEDIA_CONFIG"

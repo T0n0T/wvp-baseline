@@ -5,3 +5,4 @@
 vendor/wvp-GB28181-pro-src
 vendor/ZLMediaKit-src
 .runtime/
+skeletons/wvp/config/jwk.json

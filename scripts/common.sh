@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUNTIME_TEMPLATE_DIR="$BASE_DIR/runtime"
+SKELETONS_DIR="$BASE_DIR/skeletons"
 RUNTIME_DIR="$BASE_DIR/.runtime"
 DRY_RUN="${BASELINE_DRY_RUN:-0}"
 ENV_SCRIPT="$BASE_DIR/scripts/env.sh"
@@ -20,6 +20,14 @@ require_repo_dir() {
 
 WVP_DIR="$(require_repo_dir "$BASE_DIR/vendor/wvp-GB28181-pro" "WVP")"
 ZLM_DIR="$(require_repo_dir "$BASE_DIR/vendor/ZLMediaKit" "ZLMediaKit")"
+
+require_runtime_dir() {
+  if [[ ! -d "$RUNTIME_DIR" ]]; then
+    echo "generated runtime directory is missing: $RUNTIME_DIR" >&2
+    echo "run ./baseline.sh start, build, or status first to initialize it from skeletons/" >&2
+    exit 1
+  fi
+}
 
 quote_args() {
   printf '%q ' "$@"
@@ -72,7 +80,7 @@ PY
 
 sync_runtime_file() {
   local rel_path="$1"
-  local src="$RUNTIME_TEMPLATE_DIR/$rel_path"
+  local src="$SKELETONS_DIR/$rel_path"
   local dst="$RUNTIME_DIR/$rel_path"
   run_cmd mkdir -p "$(dirname "$dst")"
   run_cmd cp "$src" "$dst"
@@ -80,7 +88,7 @@ sync_runtime_file() {
 
 sync_runtime_tree() {
   local rel_path="$1"
-  local src="$RUNTIME_TEMPLATE_DIR/$rel_path"
+  local src="$SKELETONS_DIR/$rel_path"
   local dst="$RUNTIME_DIR/$rel_path"
   run_cmd rm -rf "$dst"
   run_cmd mkdir -p "$dst"
@@ -95,7 +103,7 @@ materialize_runtime_network_config() {
   run_cmd perl -0pi -e "s/^externIP=.*/externIP=$target_ip/m" "$media_config"
 }
 
-ensure_runtime() {
+materialize_runtime() {
   local host_ip
   host_ip="$(detect_host_ip)"
   run_cmd mkdir -p "$RUNTIME_DIR"
@@ -113,6 +121,14 @@ ensure_runtime() {
     "$RUNTIME_DIR/volumes/postgresql/data" \
     "$RUNTIME_DIR/volumes/redis/data" \
     "$RUNTIME_DIR/volumes/video/rtp"
+}
+
+ensure_runtime() {
+  if [[ ! -d "$RUNTIME_DIR" ]]; then
+    materialize_runtime
+    return 0
+  fi
+  require_runtime_dir
 }
 
 append_build_proxy_args() {

@@ -6,7 +6,7 @@
 
 - `vendor/wvp-GB28181-pro`：WVP 子模块
 - `vendor/ZLMediaKit`：ZLMediaKit 子模块
-- `runtime/`：可提交的运行时基线文件
+- `skeletons/`：可提交的运行时骨架文件
 - `.runtime/`：命令执行时生成的运行时目录，包含 compose 工作目录、日志和持久化数据，不纳入提交
 - `scripts/`：构建、配置、启动、停止、状态收集脚本实现
 - `scripts/env.sh`：默认环境变量入口，包含代理、端口、SIP 和主机地址默认值
@@ -15,6 +15,16 @@
 - `tests/`：baseline 脚本回归检查
 
 ## 入口命令
+
+拉取项目后，需要初始化 submodules
+
+```bash
+git clone https://github.com/T0n0T/wvp-baseline.git --recursive
+# 或
+git clone https://github.com/T0n0T/wvp-baseline.git
+cd wvp-baseline
+git submodule update --init --recursive
+```
 
 统一使用根目录脚本：
 
@@ -61,7 +71,7 @@
 
 - `BASELINE_HOST_IP=AUTO_HOST_IP`
 - 运行脚本时会自动解析执行机器的实际 IPv4，并回填到 `.runtime/.env` 与 `.runtime/media/config.ini`
-- 如果你执行 `./baseline.sh configure 192.168.x.x`，也会把这个 IP 同步写回 `runtime/.env`、`runtime/media/config.ini` 和 `scripts/env.sh`
+- 如果你执行 `./baseline.sh configure 192.168.x.x`，只会更新现有 `.runtime/` 中的地址相关配置
 
 ## 当前运行方式
 
@@ -73,11 +83,12 @@
 - `polaris-postgresql`
 - `polaris-redis`
 
-## 运行时目录
+## 目录语义
 
-- `runtime/` 存放可提交的基线配置。
+- `skeletons/` 存放可提交的基线配置骨架。
 - `.runtime/` 由脚本按需生成，不纳入 git。
 - 启动、停止、状态查询都基于 `.runtime/` 运行。
+- `configure` 只操作已经存在的 `.runtime/`，不会改 `skeletons/` 或 `scripts/env.sh`。
 - PostgreSQL、Redis、录像和日志等持久化内容都写入 `.runtime/volumes` 与 `.runtime/logs`。
 
 ## 常用流程

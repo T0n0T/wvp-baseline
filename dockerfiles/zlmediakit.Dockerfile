@@ -76,15 +76,15 @@ RUN apt-get update && \
       ca-certificates \
       tzdata \
       curl \
-      libssl-dev \
+      # libssl-dev \
       ffmpeg \
-      gcc \
-      g++ \
+      # gcc \
+      # g++ \
       python3 \
-      python3-dev \
+      # python3-dev \
       python3-venv \
       python3-pip \
-      gdb && \
+      && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/*

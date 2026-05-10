@@ -2,8 +2,13 @@
 set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
-echo "[build] sync generated runtime into $RUNTIME_DIR"
-ensure_runtime
+if [[ ! -d "$RUNTIME_DIR" ]]; then
+  echo "[build] initialize runtime from $SKELETONS_DIR into $RUNTIME_DIR"
+  materialize_runtime
+else
+  echo "[build] using existing runtime in $RUNTIME_DIR"
+  require_runtime_dir
+fi
 
 build_service() {
   local service="$1"

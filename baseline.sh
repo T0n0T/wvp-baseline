@@ -31,6 +31,7 @@ run_command() {
   exec "$SCRIPTS_DIR/$script_name" "$@"
 }
 
+PARSED_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)
@@ -38,14 +39,17 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     help|-h|--help)
-      usage
-      exit 0
+      PARSED_ARGS+=("$1")
+      shift
       ;;
     *)
-      break
+      PARSED_ARGS+=("$1")
+      shift
       ;;
   esac
 done
+
+set -- "${PARSED_ARGS[@]}"
 
 COMMAND="${1:-help}"
 case "$COMMAND" in
