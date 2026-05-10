@@ -7,7 +7,7 @@ RUNTIME_ENV="$RUNTIME_DIR/.env"
 RUNTIME_MEDIA_CONFIG="$RUNTIME_DIR/media/config.ini"
 
 echo "[configure] target ip: $TARGET_IP"
-require_runtime_dir
+ensure_runtime
 run_cmd perl -0pi -e "s/^Stream_IP=.*/Stream_IP=$TARGET_IP/m; s/^SDP_IP=.*/SDP_IP=$TARGET_IP/m; s/^SIP_ShowIP=.*/SIP_ShowIP=$TARGET_IP/m" "$RUNTIME_ENV"
 run_cmd perl -0pi -e "s/^externIP=.*/externIP=$TARGET_IP/m" "$RUNTIME_MEDIA_CONFIG"
 
