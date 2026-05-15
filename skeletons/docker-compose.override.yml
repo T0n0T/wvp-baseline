@@ -1,0 +1,16 @@
+# docker-compose.override.yml
+#
+# 当 BASELINE_SECCOMP_UNCONFINED=true 时生效。
+# 在 ppc64le + 旧内核/Docker 环境下，默认 seccomp 策略会阻止
+# Redis/ZLMediaKit/Java 创建线程，设 unconfined 绕过此限制。
+# 正常 x86_64 环境不需要此文件。
+services:
+  polaris-redis:
+    security_opt:
+      - seccomp:unconfined
+  polaris-media:
+    security_opt:
+      - seccomp:unconfined
+  polaris-wvp:
+    security_opt:
+      - seccomp:unconfined

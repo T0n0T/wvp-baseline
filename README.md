@@ -60,6 +60,7 @@ git submodule update --init --recursive
 - `BASELINE_SIP_PASSWORD`
 - `BASELINE_RECORD_SIP`
 - `BASELINE_RECORD_PUSH_LIVE`
+- `BASELINE_SECCOMP_UNCONFINED`
 - `http_proxy`
 - `https_proxy`
 - `no_proxy`
@@ -72,6 +73,26 @@ git submodule update --init --recursive
 - `BASELINE_HOST_IP=AUTO_HOST_IP`
 - 运行脚本时会自动解析执行机器的实际 IPv4，并回填到 `.runtime/.env` 与 `.runtime/media/config.ini`
 - 如果你执行 `./baseline.sh configure 192.168.x.x`，只会更新现有 `.runtime/` 中的地址相关配置
+
+
+## 兼容性说明
+
+### ppc64le + 旧内核 Docker 适配
+
+在 ppc64le 架构 + 旧内核/Docker 环境下（如 Debian 10 + Docker v20.10），默认 seccomp 策略会阻止 Redis 8.x、ZLMediaKit、Java JVM 创建线程，导致以下错误：
+
+- Redis: `Fatal: Can't initialize Background Jobs. Operation not permitted`
+- ZLMediaKit: `std::thread::_M_start_thread` throw system_error
+- WVP: `pthread_create failed (EPERM)` GC 线程创建失败
+
+设置环境变量 `BASELINE_SECCOMP_UNCONFINED=true` 后，`materialize_runtime()` 会自动将 `skeletons/docker-compose.override.yml` 同步到运行时目录，为相关容器添加 `security_opt: [seccomp:unconfined]` 绕过该限制。
+
+```bash
+export BASELINE_SECCOMP_UNCONFINED=true
+./baseline.sh start
+```
+
+正常 x86_64 环境无需此配置，默认 false。
 
 ## 当前运行方式
 

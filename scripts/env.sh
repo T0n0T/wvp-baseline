@@ -13,3 +13,4 @@
 : "${BASELINE_SIP_PASSWORD:=wvp_sip_password}"
 : "${BASELINE_RECORD_SIP:=true}"
 : "${BASELINE_RECORD_PUSH_LIVE:=false}"
+: "${BASELINE_SECCOMP_UNCONFINED:=false}"

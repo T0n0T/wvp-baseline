@@ -109,6 +109,9 @@ materialize_runtime() {
   run_cmd mkdir -p "$RUNTIME_DIR"
   sync_runtime_file ".env"
   sync_runtime_file "docker-compose.yml"
+  if [[ "${BASELINE_SECCOMP_UNCONFINED:-false}" == "true" ]]; then
+    sync_runtime_file "docker-compose.override.yml"
+  fi
   sync_runtime_tree "media"
   sync_runtime_tree "nginx"
   sync_runtime_tree "redis"
