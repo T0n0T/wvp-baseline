@@ -2,7 +2,7 @@ FROM node:16-bullseye AS builder
 
 WORKDIR /build
 COPY ./web /build
-RUN npm --registry=https://registry.npmmirror.com install
+# RUN npm --registry=https://registry.npmmirror.com install
 RUN npm run build:prod
 
 FROM nginx:alpine
