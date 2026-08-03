@@ -28,7 +28,9 @@
 
 ## 3. 仓库位置与目录结构
 
-**建议：本仓库根目录新建 `ui/`**，与 `skeletons/` 平行，构建产物接入 `polaris-nginx` 镜像（见 §9）。优点：与基线仓库同生命周期、部署链路最短；后续若需独立发布再拆仓。
+**独立 git 仓库 + git submodule 方式**，与 `vendor/` 下 WVP、ZLMediaKit 同一模式（见 `.gitmodules`）。新 Web 的日常开发提交全部留在独立仓库，不混入本仓库历史；本仓库通过 submodule 固定其基线版本，构建产物接入 `polaris-nginx` 镜像（见 §9）。
+
+> submodule 远程地址待定，创建时用 `git submodule add <url> ui/` 注册；占位路径 `ui/`，避免与官方前端目录 `vendor/wvp-GB28181-pro/web/` 混淆。
 
 ```
 ui/
@@ -119,7 +121,7 @@ ui/
 - `/api/` → `polaris-wvp:18978`，并做 sub_filter 将 JSON 里的媒体地址重写为 nginx 可达路径
 - `/rtp/`、`/mp4_record/` → `polaris-media`；`/mediaserver/api/downloadFile` → 媒体节点下载
 
-方案 A（推荐）：`ui/` 构建产物替换 `/opt/dist` 内容，接入 `dockerfiles/nginx.Dockerfile`（当前该文件从 `web/` 构建并拷贝 `static` 目录，接入时改为多阶段：`npm run build` 产物直接 `COPY --from=builder /build/dist /opt/dist`）。改造后 `./baseline.sh build && start` 即可整体上线，无需新增容器或端口。
+方案 A（推荐）：UI 以 submodule 固定在仓库内（占位路径 `ui/`，注册方式见 §3）。`dockerfiles/nginx.Dockerfile` 改为多阶段构建——构建阶段 `COPY ./ui /build` 后 `npm run build`，最终 `COPY --from=builder /build/dist /opt/dist`（当前该文件从 `web/` 构建并拷贝 `static` 目录，接入时一并调整）。拉取基线后需 `git submodule update --init` 才能 build（与 README 现有 submodule 说明一致）。改造后 `./baseline.sh build && start` 即可整体上线，无需新增容器或端口。
 
 方案 B：新 UI 独立容器/静态服务器，通过同源反向代理或 CORS 访问 `/api`；需配置 `user-settings.allowed-origins`（04 §2.1）。
 
