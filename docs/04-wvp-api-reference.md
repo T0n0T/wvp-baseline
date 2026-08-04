@@ -116,6 +116,8 @@ type WvpResponse<T> = {
 
 账号管理中，后端明确检查管理员角色 ID 为 `1` 的地方主要是新增、删除与改他人密码；不要仅依赖前端隐藏按钮来实现权限边界。
 
+> **添加用户已知缺陷（基线 2.7.4）**：`POST /api/user/add` 实测返回 500 —— `duplicate key value violates unique constraint "wvp_user_pkey" (id)=(1)`，`UserServiceImpl.addUser` 硬编码主键 `id=1` 导致已存在用户时必然冲突。前端调用方式本身正确（`username`/`password`/`roleId` 均被后端接收），升级 WVP 前不建议在管理界面开放用户新增。
+
 ### 4.2 国标设备与通道
 
 | 方法 | 路径 | 关键参数 | 返回/说明 |
