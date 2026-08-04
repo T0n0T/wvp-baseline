@@ -207,8 +207,10 @@ GET /api/media/stream_info_by_app_and_stream?app=<app>&stream=<stream>&mediaServ
 
 | 功能 | 原生设备路径 | 通用通道路径 | 参数 |
 | --- | --- | --- | --- |
-| PTZ | `GET /api/front-end/ptz/{deviceId}/{channelId}` | `GET /api/common/channel/front-end/ptz` | `command`：`left/right/up/down/upleft/upright/downleft/downright/zoomin/zoomout/stop`；速度 0–100 |
+| PTZ | `GET /api/front-end/ptz/{deviceId}/{channelId}` | `GET /api/common/channel/front-end/ptz` | `command`：`left/right/up/down/upleft/upright/downleft/downright/zoomin/zoomout/stop`；`horizonSpeed`/`verticalSpeed` 0–255（缺省 100）、`zoomSpeed` 0–15（缺省 16） |
 | 预置位查询 | `/preset/query/{deviceId}/{channelId}` | `/preset/query` | 通用通道传 `channelId` |
+
+> **PTZ 参数勘误**：实际后端（`PtzController`，基线 2.7.4）不接受 `speed` 参数，速度字段为 `horizonSpeed`/`verticalSpeed`/`zoomSpeed`。且 `zoomSpeed` 缺省值 16 超出其 0–15 校验范围，未显式传参时内部调用 `frontEndCommand` 会报 `100: combindCode2 为 0-15的数字`；前端必须显式传 0–15 的 `zoomSpeed`。
 | 预置位增/调/删 | `/preset/add|call|delete/{deviceId}/{channelId}` | `/preset/add|call|delete` | `presetId` |
 | 巡航 | `/cruise/*/{deviceId}/{channelId}` | `/tour/*` | `cruiseId`（通用路径名为 `tourId`）、`presetId`、速度或时间 |
 | 扫描 | `/scan/*/{deviceId}/{channelId}` | `/scan/*` | `scanId`，设置速度再启动 |
