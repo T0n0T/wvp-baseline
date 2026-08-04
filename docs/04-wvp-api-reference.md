@@ -540,6 +540,8 @@ WVP 升级时，按以下顺序更新本手册：
 | `enableMp4` | boolean | 可选 | 是否启用 MP4 录制 |
 | `enableDisableNoneReader` | boolean | 可选 | 无人观看时自动停用 |
 
+> **代理提交体勘误**：`/api/proxy/add|update` 控制器实际接收 **`StreamProxy`**（`streamProxy/bean/StreamProxy.java`，继承 `CommonGBChannel`），而非上表的 `StreamProxyParam`（后者是内部转换目标）。提交时字段映射：`url`→`srcUrl`、`mediaServerId`→`relatesMediaServerId`（固定节点）、`timeoutMs`→`timeout`（秒）、`rtpType`→`rtspType`；并可直接携带 `gbDeviceId`/`gbName` 等国标映射字段。`/api/proxy/delete` 按 `id` 删除（另有 `/api/proxy/del` 按 `app`+`stream` 删除）。
+
 ### 9.7 `StreamPush`（推流通道）
 
 > 继承 9.3 `CommonGBChannel` 的全部 `gb*` 字段（国标映射，`gbDeviceId` 与 `gbName` 提交后用于生成统一通道）。下表仅列自身字段。
